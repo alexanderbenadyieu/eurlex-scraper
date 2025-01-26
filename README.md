@@ -110,6 +110,38 @@ class DocumentContent:
     metadata: DocumentMetadata # Associated metadata
 ```
 
+## Recent Updates
+
+- Enhanced CELEX number validation to support more document formats
+- Improved metadata schema flexibility
+- Added comprehensive `.gitignore` for better version control
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.9+
+- `pip install -r requirements.txt`
+
+### Running the Scraper
+
+```bash
+# Basic usage
+python src/main.py
+
+# Specify date range
+python src/main.py --start-date 2023-10-01 --end-date 2024-01-31
+
+# Configuration options in config/config.yaml
+```
+
+### Development
+
+- Create virtual environment: `python -m venv venv`
+- Activate: `source venv/bin/activate`
+- Install dependencies: `pip install -r requirements.txt`
+- Run tests: `python -m pytest src/test/`
+
 ## Installation
 
 1. Clone the repository:
