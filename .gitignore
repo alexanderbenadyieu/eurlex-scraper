@@ -1,0 +1,53 @@
+# Python-specific ignores
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/
+
+# Data directories (large files/datasets)
+data/
+*.json
+*.csv
+*.xlsx
+
+# Logs and metrics
+logs/
+metrics/
+*.log
+
+# IDE-specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Configuration files with sensitive information
+config/secrets.yaml
+config/config.local.yaml
+
+# Build and distribution files
+build/
+dist/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Specific to this project
+output/
+cache/
+temp/
