@@ -1,4 +1,30 @@
-"""Main script for running the EUR-Lex scraper across date ranges."""
+"""
+EUR-Lex Document Scraper - Command-Line Interface
+
+A comprehensive command-line tool for systematically scraping 
+legislative documents from the EUR-Lex repository across specified 
+date ranges.
+
+Key Features:
+- Date range-based document scraping
+- Robust date validation
+- Configurable scraping parameters
+- Comprehensive logging
+- Error handling
+
+Scraping Workflow:
+- Validate input date range
+- Initialize scraper
+- Iterate through dates
+- Collect and store documents
+- Handle potential errors
+
+Technologies:
+- Argparse for CLI argument parsing
+- Loguru for advanced logging
+- Custom scraping infrastructure
+"""
+
 from datetime import datetime, timedelta
 from typing import Optional
 import argparse
@@ -9,15 +35,29 @@ from logging_config import setup_logging
 from exceptions import InvalidDateError
 
 def validate_date_range(start_date: datetime, end_date: datetime) -> None:
-    """Validate the date range for scraping.
-    
+    """
+    Validate the date range for EUR-Lex document scraping.
+
+    Performs comprehensive validation of the input date range, 
+    ensuring compliance with scraping constraints and logical requirements.
+
+    Validation Checks:
+    - Minimum allowed scraping date (October 2nd, 2023)
+    - Chronological order of dates
+    - Website-specific scraping limitations
+
     Args:
-        start_date: Start date for scraping
-        end_date: End date for scraping
-        
+        start_date (datetime): Start date for document scraping
+        end_date (datetime): End date for document scraping
+
     Raises:
-        InvalidDateError: If start_date is before October 2nd, 2023
-        ValueError: If end_date is before start_date
+        InvalidDateError: If start date is before the minimum allowed date
+        ValueError: If end date is chronologically before start date
+
+    Notes:
+        - Enforces website-specific scraping constraints
+        - Provides informative error messages
+        - Prevents invalid date range configurations
     """
     min_allowed_date = datetime(2023, 10, 2)
     if start_date < min_allowed_date:
@@ -34,12 +74,30 @@ def scrape_date_range(
     scraper: Optional[EURLexScraper] = None
 ) -> None:
     """
-    Scrape EUR-Lex documents for a range of dates, from oldest to newest.
-    
+    Systematically scrape EUR-Lex documents across a specified date range.
+
+    Orchestrates the complete document scraping process for a given 
+    chronological range, handling initialization, iteration, and error management.
+
+    Workflow:
+    1. Validate input date range
+    2. Initialize scraper (if not provided)
+    3. Iterate through dates
+    4. Scrape journal documents
+    5. Handle and log potential errors
+
     Args:
-        start_date: Start date (inclusive)
-        end_date: End date (inclusive)
-        scraper: Optional EURLexScraper instance. If None, one will be created.
+        start_date (datetime): Start date for scraping (inclusive)
+        end_date (datetime): End date for scraping (inclusive)
+        scraper (Optional[EURLexScraper], optional): 
+            Pre-configured EURLexScraper instance. 
+            Creates a new instance if not provided.
+
+    Notes:
+        - Supports flexible scraper configuration
+        - Provides comprehensive error handling
+        - Logs scraping activities and potential issues
+        - Iterates chronologically through dates
     """
     try:
         validate_date_range(start_date, end_date)
@@ -72,8 +130,31 @@ def scrape_date_range(
         finally:
             current_date += timedelta(days=1)
 
-def main():
-    """Main entry point for the scraper."""
+def main() -> None:
+    """
+    Main entry point for the EUR-Lex document scraper CLI.
+
+    Manages command-line argument parsing, logging configuration, 
+    and initiation of the document scraping process.
+
+    CLI Argument Handling:
+    - Parse start and end dates
+    - Configure logging
+    - Initialize scraping workflow
+
+    Workflow:
+    1. Set up argument parser
+    2. Configure logging
+    3. Parse command-line arguments
+    4. Validate and convert date inputs
+    5. Initiate date range scraping
+
+    Notes:
+        - Provides user-friendly CLI for document scraping
+        - Supports flexible date range specification
+        - Configures logging for comprehensive tracking
+        - Handles potential CLI argument errors
+    """
     parser = argparse.ArgumentParser(description="EUR-Lex document scraper")
     parser.add_argument(
         "--start-date",
