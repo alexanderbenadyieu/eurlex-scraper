@@ -316,6 +316,35 @@ ERROR    Cannot scrape dates before October 2nd, 2023 due to website structure c
 - Limited to documents in English
 - Some document types may have incomplete metadata
 
+## Testing
+
+We use `pytest` for our test suite. To run tests:
+
+```bash
+# Install test dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest
+
+# Run tests with coverage report
+pytest --cov=src
+
+# Run tests for a specific module
+pytest src/test/test_validation.py
+```
+
+#### Test Coverage
+- Comprehensive unit tests for:
+  - Metadata validation
+  - Document tracking
+  - Scraping logic
+
+#### Continuous Integration
+- GitHub Actions workflow for automated testing
+- Coverage reporting
+- Code quality checks
+
 ## Contributing
 
 Contributions are welcome! Please:
