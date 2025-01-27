@@ -1,4 +1,25 @@
-"""Document parsing for EUR-Lex scraper."""
+"""
+Document Parsing Module for EUR-Lex Web Scraper
+
+This module provides comprehensive parsing capabilities for 
+extracting metadata and content from EUR-Lex documents. It offers 
+robust parsing mechanisms for handling various document structures 
+and extracting critical information.
+
+Key Features:
+- Structured document metadata extraction
+- Flexible parsing of HTML and text content
+- Advanced date parsing and normalization
+- Comprehensive error handling
+- Support for multiple document types
+
+Parsing Capabilities:
+- Metadata extraction (dates, authors, identifiers)
+- Full text and URL parsing
+- EuroVoc descriptor and subject matter extraction
+- Directory code and description parsing
+"""
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union, Any
@@ -12,7 +33,31 @@ from exceptions import ParseError
 
 @dataclass
 class DocumentMetadata:
-    """Document metadata."""
+    """
+    Structured representation of EUR-Lex document metadata.
+
+    Provides a comprehensive and type-safe container for document 
+    metadata, capturing essential information about EUR-Lex documents.
+
+    Attributes:
+        celex_number (str): Unique CELEX identifier for the document
+        title (str): Official document title
+        identifier (str): Document-specific identifier
+        eli_uri (str): European Legislation Identifier URI
+        adoption_date (Optional[datetime]): Date of document adoption
+        effect_date (Optional[datetime]): Date when document takes effect
+        end_validity_date (Optional[datetime]): Date when document becomes invalid
+        authors (List[str]): List of document authors or institutions
+        form (str): Document type or legal form
+        eurovoc_descriptors (List[str]): EuroVoc thematic descriptors
+        subject_matters (List[str]): Subject matter classifications
+        directory_codes (List[str]): Official directory classification codes
+        directory_descriptions (List[str]): Descriptions of directory codes
+
+    Notes:
+        - Supports optional date fields for flexibility
+        - Provides comprehensive document classification information
+    """
     celex_number: str
     title: str
     identifier: str
@@ -29,10 +74,36 @@ class DocumentMetadata:
 
 
 class DocumentContent:
-    """Document content."""
+    """
+    Container for parsed document content and associated metadata.
+
+    Manages the full text, HTML, and PDF URLs for a EUR-Lex document, 
+    with optional metadata attachment.
+
+    Attributes:
+        full_text (str): Complete text content of the document
+        html_url (str): URL to the HTML version of the document
+        pdf_url (str): URL to the PDF version of the document
+        metadata (Optional[DocumentMetadata]): Parsed document metadata
+
+    Notes:
+        - Supports lazy loading of metadata
+        - Provides access to multiple document representations
+    """
     
     def __init__(self, full_text: str, html_url: str, pdf_url: str):
-        """Initialize document content."""
+        """
+        Initialize a document content container.
+
+        Args:
+            full_text (str): Complete text content of the document
+            html_url (str): URL to the HTML version of the document
+            pdf_url (str): URL to the PDF version of the document
+
+        Notes:
+            - Initializes with document content and URL references
+            - Metadata can be added later via the metadata attribute
+        """
         self.full_text = full_text
         self.html_url = html_url
         self.pdf_url = pdf_url
@@ -40,10 +111,42 @@ class DocumentContent:
 
 
 class MetadataParser:
-    """Parser for document metadata."""
+    """
+    Advanced parser for extracting structured metadata from EUR-Lex documents.
+
+    Provides sophisticated parsing capabilities to extract and normalize 
+    document metadata from BeautifulSoup parsed HTML content.
+
+    Parsing Capabilities:
+    - Date extraction and normalization
+    - Comprehensive metadata field parsing
+    - Robust error handling
+    - Support for multiple document structures
+
+    Notes:
+        - Uses BeautifulSoup for HTML parsing
+        - Handles variations in document metadata presentation
+        - Provides detailed logging for parsing activities
+    """
     
     def _extract_dates(self, soup: BeautifulSoup) -> Dict[str, str]:
-        """Extract dates from metadata."""
+        """
+        Extract and normalize dates from document metadata.
+
+        Parses various date fields from the BeautifulSoup parsed HTML, 
+        handling different date representations and structures.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content
+
+        Returns:
+            Dict[str, str]: Dictionary of date labels and their string representations
+
+        Notes:
+            - Supports multiple date field extractions
+            - Handles potential missing or inconsistent date formats
+            - Prepares dates for further parsing and normalization
+        """
         dates = {
             'Date of document': '',
             'Date of effect': '',
@@ -74,7 +177,22 @@ class MetadataParser:
             return dates
     
     def _extract_directory_info(self, soup: BeautifulSoup) -> Tuple[List[str], List[str]]:
-        """Extract directory code and description."""
+        """
+        Extract directory code and description.
+
+        Parses directory code and description from the BeautifulSoup 
+        parsed HTML content.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content
+
+        Returns:
+            Tuple[List[str], List[str]]: Tuple of directory codes and descriptions
+
+        Notes:
+            - Supports extraction of multiple directory codes and descriptions
+            - Handles variations in directory code and description presentation
+        """
         try:
             directory_section = soup.find('dt', string=lambda s: s and 'Directory code' in s)
             if directory_section:
@@ -102,7 +220,22 @@ class MetadataParser:
             return [], []
     
     def _extract_list_items(self, soup: BeautifulSoup, section_label: str) -> List[str]:
-        """Extract items from a list section."""
+        """
+        Extract items from a list section.
+
+        Parses list items from the BeautifulSoup parsed HTML content.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML content
+            section_label (str): Label of the section to extract
+
+        Returns:
+            List[str]: List of extracted items
+
+        Notes:
+            - Supports extraction of multiple list items
+            - Handles variations in list item presentation
+        """
         items = []
         try:
             section = soup.find('dt', string=lambda s: s and section_label in s)
@@ -118,13 +251,16 @@ class MetadataParser:
     def parse_metadata(self, html_content: str) -> Dict[str, Any]:
         """
         Parse metadata from document HTML.
-        
+
+        Extracts and normalizes metadata from the BeautifulSoup parsed 
+        HTML content.
+
         Args:
-            html_content: HTML content to parse
-            
+            html_content (str): Raw HTML content of the document
+
         Returns:
-            Dict[str, Any]: Parsed metadata
-            
+            Dict[str, Any]: Dictionary of parsed metadata
+
         Raises:
             ParseError: If metadata cannot be parsed
         """
@@ -215,14 +351,59 @@ class MetadataParser:
 
 
 class DocumentParser:
-    """Parser for document content."""
+    """
+    Comprehensive parser for extracting full document content from EUR-Lex.
+
+    Manages the parsing of document content, including text extraction, 
+    URL resolution, and integration with metadata parsing.
+
+    Parsing Capabilities:
+    - Full text extraction from HTML
+    - URL resolution and normalization
+    - Integration with metadata parsing
+    - Error handling and logging
+
+    Attributes:
+        base_url (str): Base URL for resolving relative document URLs
+
+    Notes:
+        - Supports parsing of various document types
+        - Provides robust URL handling
+        - Integrates with metadata extraction
+    """
     
     def __init__(self, base_url: str):
-        """Initialize document parser."""
+        """
+        Initialize the document content parser.
+
+        Args:
+            base_url (str): Base URL for resolving relative document URLs
+
+        Notes:
+            - Sets up the base URL for URL resolution
+            - Prepares parser for document content extraction
+        """
         self.base_url = base_url
     
     def parse_document(self, html_content: str, doc_id: str) -> DocumentContent:
-        """Parse document content from HTML."""
+        """
+        Parse a complete document from HTML content.
+
+        Extracts full document content, resolves URLs, and prepares 
+        a comprehensive document representation.
+
+        Args:
+            html_content (str): Raw HTML content of the document
+            doc_id (str): Unique document identifier
+
+        Returns:
+            DocumentContent: Parsed document with content and URLs
+
+        Notes:
+            - Handles full document parsing
+            - Supports error handling and logging
+            - Integrates metadata and content parsing
+        """
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             
