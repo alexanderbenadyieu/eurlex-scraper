@@ -1,29 +1,80 @@
-"""Scraper for EUR-Lex documents."""
-from contextlib import nullcontext
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional
-from urllib.parse import urljoin
+"""
+EUR-Lex Web Scraper Module
 
-import requests
-from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
-from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_exponential
+A comprehensive web scraping solution for extracting legislative 
+documents from the EUR-Lex repository. Provides advanced capabilities 
+for document discovery, retrieval, parsing, and storage.
 
-from config_manager import ConfigManager
-from document_tracker import DocumentTracker
-from exceptions import ParseError, ScrapingError
-from metrics import MetricsCollector
-from parsers import DocumentContent, DocumentParser, MetadataParser
-from storage import StorageManager
-from validation import validate_document_id
+Key Features:
+- Configurable document scraping
+- Robust error handling and retry mechanisms
+- Comprehensive document tracking
+- Metrics and performance monitoring
+- Flexible storage and validation
 
+Scraping Capabilities:
+- Legislative document retrieval
+- Metadata extraction
+- Document content parsing
+- Duplicate prevention
+- Performance tracking
+
+Technologies:
+- BeautifulSoup for HTML parsing
+- Requests for HTTP interactions
+- Fake User-Agent for request anonymization
+- Tenacity for request retry strategies
+"""
 
 class EURLexScraper:
-    """Scraper for EUR-Lex legislative documents."""
+    """
+    Advanced web scraper for retrieving and processing EUR-Lex legislative documents.
+
+    Manages the complete document scraping workflow, from configuration 
+    and document discovery to parsing, validation, and storage.
+
+    Core Components:
+    - Configuration management
+    - Document parsing
+    - Metadata extraction
+    - Storage handling
+    - Document tracking
+    - Metrics collection
+
+    Attributes:
+        config_manager (ConfigManager): Manages scraper configuration
+        config (Dict): Scraping configuration settings
+        base_url (str): Base URL for EUR-Lex document retrieval
+        doc_parser (DocumentParser): Parses document content
+        metadata_parser (MetadataParser): Extracts document metadata
+        storage (StorageManager): Manages document storage
+        tracker (DocumentTracker): Tracks processed documents
+        metrics (Optional[MetricsCollector]): Collects scraping performance metrics
+
+    Notes:
+        - Supports flexible configuration
+        - Provides comprehensive error handling
+        - Integrates multiple components for robust scraping
+    """
     
     def __init__(self, config_manager: Optional[ConfigManager] = None):
+        """
+        Initialize the EUR-Lex web scraper with comprehensive configuration.
+
+        Sets up all necessary components for document scraping, including 
+        parsers, storage, tracking, and optional metrics collection.
+
+        Args:
+            config_manager (Optional[ConfigManager], optional): 
+                Configuration manager for scraper settings. 
+                Creates a default instance if not provided.
+
+        Notes:
+            - Loads scraping, storage, and metrics configurations
+            - Initializes document parser and metadata parser
+            - Sets up storage manager and document tracker
+            - Conditionally initializes metrics collection
+        """
         """Initialize the scraper with configuration."""
         self.config_manager = config_manager or ConfigManager()
         self.config = self.config_manager.get_scraping_config()
@@ -55,6 +106,22 @@ class EURLexScraper:
         self.session = self._init_session()
     
     def _init_session(self) -> requests.Session:
+        """
+        Initialize a requests session with proper headers.
+
+        Prepares a requests session with:
+        - Randomized user agent
+        - Configurable timeout
+        - Optional proxy support
+
+        Returns:
+            requests.Session: Configured HTTP session for web scraping
+
+        Notes:
+            - Uses fake_useragent for request anonymization
+            - Supports configurable request parameters
+            - Enhances request reliability and reduces blocking
+        """
         """Initialize a requests session with proper headers."""
         session = requests.Session()
         session.headers.update({
@@ -65,10 +132,34 @@ class EURLexScraper:
         return session
     
     def _rotate_user_agent(self) -> None:
+        """
+        Rotate the user agent.
+
+        Updates the user agent for the current session.
+
+        Notes:
+            - Enhances request anonymization
+            - Reduces blocking risk
+        """
         """Rotate the user agent."""
         self.session.headers['User-Agent'] = self.user_agent.random
     
     def get_journal_url(self, date: datetime) -> str:
+        """
+        Generate the URL for a specific journal date.
+
+        Creates a URL for retrieving the journal page for a given date.
+
+        Args:
+            date (datetime): Date for which to generate the journal URL
+
+        Returns:
+            str: Journal URL for the specified date
+
+        Notes:
+            - Supports date-based journal retrieval
+            - Uses EUR-Lex date formatting
+        """
         """Generate the URL for a specific journal date."""
         date_str = date.strftime("%d%m%Y")
         url = f"{self.base_url}/oj/daily-view/L-series/default.html?ojDate={date_str}"
@@ -76,6 +167,22 @@ class EURLexScraper:
         return url
     
     def get_document_url(self, doc_id: str, view_type: str = 'ALL') -> str:
+        """
+        Generate the URL for a specific document view.
+
+        Creates a URL for retrieving a document in the specified view type.
+
+        Args:
+            doc_id (str): Document identifier
+            view_type (str, optional): View type for the document. Defaults to 'ALL'.
+
+        Returns:
+            str: Document URL for the specified view type
+
+        Notes:
+            - Supports multiple view types
+            - Uses EUR-Lex document formatting
+        """
         """Generate the URL for a specific document view."""
         if view_type == 'ALL':
             url = f"{self.base_url}/legal-content/EN/ALL/?uri=OJ:L_{doc_id}"
@@ -90,6 +197,26 @@ class EURLexScraper:
         reraise=True
     )
     def fetch_page(self, url: str) -> str:
+        """
+        Fetch a page with retry logic.
+
+        Retrieves the content of a page using the provided URL, 
+        with robust error handling and retry mechanisms.
+
+        Args:
+            url (str): URL of the page to fetch
+
+        Returns:
+            str: Raw content of the page
+
+        Raises:
+            ScrapingError: If page retrieval fails
+
+        Notes:
+            - Uses tenacity for request retry strategies
+            - Supports exponential backoff
+            - Provides detailed error logging
+        """
         """Fetch a page with retry logic."""
         try:
             logger.debug(f"Fetching URL: {url}")
@@ -116,6 +243,21 @@ class EURLexScraper:
             self._rotate_user_agent()
     
     def extract_document_links(self, html_content: str) -> List[Dict[str, str]]:
+        """
+        Extract document links from journal page.
+
+        Parses the journal page content to extract links to documents.
+
+        Args:
+            html_content (str): Raw HTML content of the journal page
+
+        Returns:
+            List[Dict[str, str]]: List of document links with metadata
+
+        Notes:
+            - Supports comprehensive link extraction
+            - Uses BeautifulSoup for HTML parsing
+        """
         """Extract document links from journal page."""
         soup = BeautifulSoup(html_content, 'html.parser')
         documents = []
@@ -190,6 +332,26 @@ class EURLexScraper:
             raise ParseError("Failed to extract document links from journal page") from e
     
     def scrape_document(self, doc_id: str, date: datetime, journal_id: str) -> Optional[Path]:
+        """
+        Scrape a single document.
+
+        Performs the complete scraping workflow for a single document, 
+        including validation, retrieval, parsing, and storage.
+
+        Args:
+            doc_id (str): Document identifier
+            date (datetime): Date of the document
+            journal_id (str): Journal identifier
+
+        Returns:
+            Optional[Path]: Path to the stored document if successful, None otherwise
+
+        Notes:
+            - Comprehensive document scraping workflow
+            - Integrates validation, parsing, and storage
+            - Supports optional metrics tracking
+            - Provides detailed error handling
+        """
         """Scrape a single document."""
         try:
             # Start timing document processing
@@ -260,6 +422,24 @@ class EURLexScraper:
             return None
     
     def scrape_journal(self, date: datetime) -> List[Path]:
+        """
+        Scrape all documents from a journal.
+
+        Iterates through all documents in a journal, performing the 
+        complete scraping workflow for each document.
+
+        Args:
+            date (datetime): Date of the journal
+
+        Returns:
+            List[Path]: List of paths to stored documents
+
+        Notes:
+            - Comprehensive journal scraping workflow
+            - Integrates document scraping and tracking
+            - Supports optional metrics tracking
+            - Provides detailed error handling
+        """
         """Scrape all documents from a journal."""
         try:
             # Start timing journal processing
