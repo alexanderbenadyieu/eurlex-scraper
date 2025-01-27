@@ -1,4 +1,30 @@
-"""Storage module for EUR-Lex scraper."""
+"""
+Document Storage Management Module for EUR-Lex Web Scraper
+
+A robust and flexible storage management system for organizing 
+and persisting scraped EUR-Lex legislative documents. Provides 
+comprehensive document storage capabilities with advanced 
+directory management and metadata validation.
+
+Key Features:
+- Hierarchical document storage
+- Automatic directory creation
+- Metadata validation
+- Flexible file naming
+- Error handling and logging
+
+Storage Strategy:
+- Organized by year/month/journal/document
+- JSON-based document storage
+- Configurable base directory
+- Supports incremental and batch document storage
+
+Technologies:
+- Python Pathlib for file and directory management
+- JSON for document serialization
+- Loguru for logging
+"""
+
 import json
 from datetime import datetime
 from pathlib import Path
@@ -11,20 +37,67 @@ from validation import validate_metadata
 
 
 class StorageManager:
-    """Manages storage of scraped documents and metadata."""
+    """
+    Advanced document storage management system for EUR-Lex web scraper.
+
+    Manages the complete lifecycle of document storage, including 
+    directory creation, file naming, and document persistence.
+
+    Core Responsibilities:
+    - Generate document storage paths
+    - Ensure directory existence
+    - Validate and store document metadata
+    - Handle storage-related errors
+    - Provide flexible storage configuration
+
+    Attributes:
+        base_dir (Path): Base directory for document storage
+        
+    Raises:
+        StorageError: For directory creation or file storage failures
+
+    Notes:
+        - Supports hierarchical document organization
+        - Provides robust error handling
+        - Ensures consistent storage structure
+    """
     
     def __init__(self, base_dir: str):
         """
-        Initialize storage manager.
-        
+        Initialize the document storage management system.
+
+        Sets up the base directory for document storage and ensures 
+        its existence with comprehensive error handling.
+
         Args:
-            base_dir: Base directory for storing documents
+            base_dir (str): Base directory path for storing documents
+
+        Notes:
+            - Converts input to Path object
+            - Creates base directory if it doesn't exist
+            - Logs and raises errors for directory creation failures
         """
         self.base_dir = Path(base_dir)
         self._ensure_directory_exists(self.base_dir)
     
     def _ensure_directory_exists(self, directory: Path) -> None:
-        """Create directory if it doesn't exist."""
+        """
+        Create a directory if it does not already exist.
+
+        Attempts to create the specified directory with parent directories, 
+        with robust error handling and logging.
+
+        Args:
+            directory (Path): Directory path to create
+
+        Raises:
+            StorageError: If directory creation fails
+
+        Notes:
+            - Uses mkdir with parents=True for nested directory creation
+            - Provides detailed error logging
+            - Ensures directory availability before storage operations
+        """
         try:
             directory.mkdir(parents=True, exist_ok=True)
         except Exception as e:
@@ -33,15 +106,23 @@ class StorageManager:
     
     def _get_document_path(self, date: datetime, journal_id: str, doc_id: str) -> Path:
         """
-        Generate the full path for a document.
-        
+        Generate a hierarchical file path for a document.
+
+        Creates a structured file path based on document metadata, 
+        supporting organized and predictable document storage.
+
         Args:
-            date: Document date
-            journal_id: Journal identifier
-            doc_id: Document identifier
-            
+            date (datetime): Date of the document
+            journal_id (str): Identifier of the source journal
+            doc_id (str): Unique document identifier
+
         Returns:
-            Path: Full path to the document file
+            Path: Complete file path for document storage
+
+        Notes:
+            - Supports year/month/journal/document hierarchy
+            - Ensures consistent path generation
+            - Facilitates easy document retrieval
         """
         # Create path: year/month/journal/document.json
         year_dir = self.base_dir / str(date.year)
@@ -60,18 +141,31 @@ class StorageManager:
                       doc_id: str) -> Path:
         """
         Store a document as JSON.
-        
+
+        Performs comprehensive document storage, including:
+        - Metadata validation
+        - Path generation
+        - File writing
+        - Error handling
+
         Args:
-            document: Document content and metadata
-            date: Document date
-            journal_id: Journal identifier
-            doc_id: Document identifier
-            
+            document (Dict[str, Any]): Document content and metadata
+            date (datetime): Date of the document
+            journal_id (str): Identifier of the source journal
+            doc_id (str): Unique document identifier
+
         Returns:
-            Path: Path where the document was stored
-            
+            Path: Path to the stored document file
+
         Raises:
-            StorageError: If storing fails
+            StorageError: For metadata validation or file writing failures
+            ValidationError: For invalid metadata
+
+        Notes:
+            - Validates metadata before storage
+            - Supports JSON document storage
+            - Provides comprehensive error handling
+            - Logs storage activities
         """
         try:
             # Validate metadata if present
@@ -101,14 +195,20 @@ class StorageManager:
     def document_exists(self, date: datetime, journal_id: str, doc_id: str) -> bool:
         """
         Check if a document already exists.
-        
+
+        Verifies the existence of a document based on its metadata.
+
         Args:
-            date: Document date
-            journal_id: Journal identifier
-            doc_id: Document identifier
-            
+            date (datetime): Date of the document
+            journal_id (str): Identifier of the source journal
+            doc_id (str): Unique document identifier
+
         Returns:
             bool: True if document exists
+
+        Notes:
+            - Supports flexible document existence checks
+            - Provides efficient existence verification
         """
         file_path = self._get_document_path(date, journal_id, doc_id)
         return file_path.exists()
@@ -119,14 +219,22 @@ class StorageManager:
                      doc_id: str) -> Optional[Dict[str, Any]]:
         """
         Load a stored document.
-        
+
+        Retrieves a document from the storage system using its metadata.
+
         Args:
-            date: Document date
-            journal_id: Journal identifier
-            doc_id: Document identifier
-            
+            date (datetime): Date of the document
+            journal_id (str): Identifier of the source journal
+            doc_id (str): Unique document identifier
+
         Returns:
-            Optional[Dict[str, Any]]: Document content and metadata if exists
+            Optional[Dict[str, Any]]: Loaded document dictionary, 
+                                      or None if document not found
+
+        Notes:
+            - Supports flexible document retrieval
+            - Handles non-existent documents gracefully
+            - Provides optional error logging
         """
         try:
             file_path = self._get_document_path(date, journal_id, doc_id)
