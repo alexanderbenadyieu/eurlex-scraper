@@ -1,4 +1,18 @@
-"""Deduplicates documents from the scraped dataset based on CELEX numbers."""
+"""
+Document Deduplication Module for EUR-Lex Web Scraper
+
+This module provides advanced document deduplication capabilities, 
+ensuring data integrity and preventing redundant storage of documents. 
+It offers sophisticated mechanisms to identify, track, and manage 
+duplicate documents based on various criteria.
+
+Key Features:
+- CELEX number-based duplicate detection
+- Flexible file path scanning
+- Intelligent duplicate resolution
+- Comprehensive logging of deduplication activities
+- Configurable deduplication strategies
+"""
 
 import json
 from pathlib import Path
@@ -10,19 +24,58 @@ import os
 
 
 class DocumentDeduplicator:
-    """Handles deduplication of scraped documents based on CELEX numbers."""
+    """
+    A comprehensive document deduplication system for the EUR-Lex web scraper.
+
+    Manages the identification and handling of duplicate documents 
+    within the scraped dataset. Provides methods to scan, detect, 
+    and optionally resolve document duplicates.
+
+    Attributes:
+        data_dir (Path): Base directory containing scraped documents
+        document_map (Dict[str, List[Path]]): Mapping of CELEX numbers to file paths
+
+    Notes:
+        - Supports recursive document discovery
+        - Handles various document metadata structures
+        - Provides detailed error logging
+    """
 
     def __init__(self, data_dir: str):
-        """Initialize the deduplicator.
-        
+        """
+        Initialize the document deduplication system.
+
+        Sets up the deduplicator by specifying the base data directory 
+        and preparing for document scanning and duplicate detection.
+
         Args:
-            data_dir: Base directory containing the scraped documents
+            data_dir (str): Path to the base directory containing scraped documents
+
+        Notes:
+            - Converts input path to a Path object
+            - Prepares an empty document mapping dictionary
+            - Ready for subsequent scanning and duplicate detection
         """
         self.data_dir = Path(data_dir)
         self.document_map: Dict[str, List[Path]] = {}  # CELEX number -> list of file paths
         
     def scan_documents(self):
-        """Scan all documents and build a map of CELEX numbers to file paths."""
+        """
+        Scan all documents in the data directory and build a comprehensive 
+        document mapping based on CELEX numbers.
+
+        Behavior:
+            - Recursively searches the data directory for JSON files
+            - Extracts CELEX numbers from document metadata
+            - Builds a mapping of CELEX numbers to file paths
+            - Handles potential file reading errors
+
+        Notes:
+            - Uses rglob for recursive file searching
+            - Supports nested directory structures
+            - Provides error logging for problematic files
+            - Populates the document_map attribute
+        """
         logger.info(f"Scanning documents in {self.data_dir}")
         
         for json_file in self.data_dir.rglob("*.json"):
@@ -38,22 +91,43 @@ class DocumentDeduplicator:
                 logger.error(f"Error processing {json_file}: {str(e)}")
     
     def find_duplicates(self) -> Dict[str, List[Path]]:
-        """Find documents with duplicate CELEX numbers.
-        
+        """
+        Identify documents with duplicate CELEX numbers.
+
+        Analyzes the document mapping to find CELEX numbers 
+        associated with multiple file paths.
+
         Returns:
-            Dict mapping CELEX numbers to lists of file paths for duplicates
+            Dict[str, List[Path]]: A dictionary where keys are CELEX numbers 
+                                   and values are lists of duplicate file paths
+
+        Notes:
+            - Returns only CELEX numbers with more than one file path
+            - Provides a comprehensive view of document duplicates
+            - Supports further duplicate resolution strategies
         """
         return {celex: paths for celex, paths in self.document_map.items() 
                 if len(paths) > 1}
     
     def _parse_date_from_path(self, path: Path) -> Tuple[datetime, str]:
-        """Parse date from file path, handling various date formats.
-        
+        """
+        Extract and parse the date from a document file path.
+
+        Attempts to parse the date from the file path using various 
+        strategies, supporting different directory and filename structures.
+
         Args:
-            path: Path object to parse date from
-            
+            path (Path): File path to extract date from
+
         Returns:
-            Tuple of (datetime object, original date string)
+            Tuple[datetime, str]: A tuple containing:
+                - Parsed datetime object
+                - Original date string representation
+
+        Notes:
+            - Handles various date format patterns
+            - Supports nested directory date representations
+            - Provides robust date parsing with multiple fallback mechanisms
         """
         try:
             # Get the date directory (which is the immediate parent of the file)
@@ -69,11 +143,21 @@ class DocumentDeduplicator:
             raise
     
     def keep_earliest_date(self, duplicates: Dict[str, List[Path]], backup_dir: str = None):
-        """Keep only the document from the earliest date directory for each CELEX number.
-        
+        """
+        Keep only the document from the earliest date directory for each CELEX number.
+
+        Resolves duplicates by selecting the earliest dated document 
+        and optionally backing up removed duplicates.
+
         Args:
-            duplicates: Dict mapping CELEX numbers to lists of duplicate file paths
-            backup_dir: Optional directory to backup removed duplicates
+            duplicates (Dict[str, List[Path]]): Dictionary of CELEX numbers to duplicate file paths
+            backup_dir (str, optional): Directory to backup removed duplicates. Defaults to None.
+
+        Notes:
+            - Sorts file paths by date
+            - Keeps the earliest dated file
+            - Optionally backs up removed duplicates
+            - Provides logging for removed duplicates
         """
         if backup_dir:
             backup_path = Path(backup_dir)
@@ -119,10 +203,14 @@ class DocumentDeduplicator:
                 continue
     
     def cleanup_empty_directories(self):
-        """Remove empty directories in the data directory structure.
-        
+        """
+        Remove empty directories in the data directory structure.
+
         Walks the directory tree bottom-up and removes any empty directories.
-        Will remove nested empty directories as well (e.g., empty day dir, then its empty month dir).
+
+        Notes:
+            - Removes nested empty directories
+            - Provides logging for removed directories
         """
         logger.info("Cleaning up empty directories...")
         empty_dirs = 0
@@ -143,10 +231,17 @@ class DocumentDeduplicator:
         logger.info(f"Removed {empty_dirs} empty directories")
     
     def cleanup(self, backup_dir: str = None):
-        """Run the complete deduplication process.
-        
+        """
+        Run the complete deduplication process.
+
+        Scans documents, detects duplicates, resolves them, and cleans up empty directories.
+
         Args:
-            backup_dir: Optional directory to backup removed duplicates
+            backup_dir (str, optional): Directory to backup removed duplicates. Defaults to None.
+
+        Notes:
+            - Provides comprehensive logging for the deduplication process
+            - Supports optional backup of removed duplicates
         """
         self.scan_documents()
         duplicates = self.find_duplicates()
