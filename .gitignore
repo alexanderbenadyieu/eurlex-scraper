@@ -47,6 +47,10 @@ dist/
 *.bak
 *~
 
+# Notebooks directory
+notebooks/
+*.ipynb
+
 # Specific to this project
 output/
 cache/

@@ -140,38 +140,18 @@ class MetricsCollector:
     
     def save_metrics(self) -> None:
         """
-        Save metrics to local files.
-
-        Saves metrics in both Prometheus and JSON formats.
+        Save metrics to local Prometheus text file.
 
         Notes:
-            - Saves metrics to files in the metrics directory
-            - Provides easy access to metrics data for analysis
+            - Saves metrics in Prometheus text format
+            - Provides metrics data for analysis
         """
         try:
             # Save Prometheus format metrics
             prom_file = self.metrics_dir / f"metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.prom"
             write_to_textfile(str(prom_file), self.registry)
             
-            # Save JSON format for easier reading
-            metrics_dict = {
-                'documents_processed': {
-                    'success': self.documents_processed.labels(status='success', date='*')._value.get(),
-                    'failure': self.documents_processed.labels(status='failure', date='*')._value.get()
-                },
-                'requests': {
-                    'success': sum(self.requests_total.labels(status='success', url='*')._value.get() for _ in [0]),
-                    'failure': sum(self.requests_total.labels(status='failure', url='*')._value.get() for _ in [0])
-                },
-                'retry_attempts': sum(self.retry_attempts.labels(url='*')._value.get() for _ in [0]),
-                'validation_errors': sum(self.validation_errors.labels(type='*', details='*')._value.get() for _ in [0])
-            }
-            
-            json_file = self.metrics_dir / f"metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            with open(json_file, 'w') as f:
-                json.dump(metrics_dict, f, indent=2)
-            
-            logger.info(f"Metrics saved to {self.metrics_dir}")
+            logger.info(f"Metrics saved to {prom_file}")
             
         except Exception as e:
             logger.error(f"Failed to save metrics: {str(e)}")
