@@ -1,4 +1,14 @@
-"""Validation module for EUR-Lex scraper."""
+"""Validation module for EUR-Lex document metadata.
+
+This module provides comprehensive validation and parsing utilities for 
+EUR-Lex document metadata, ensuring data integrity and consistency.
+
+Key Features:
+- JSON Schema-based metadata validation
+- Document ID format validation
+- Date parsing with flexible input formats
+- Logging of non-standard document identifiers
+"""
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 import re
@@ -40,13 +50,22 @@ METADATA_SCHEMA = {
 
 def validate_metadata(metadata: Dict[str, Any]) -> None:
     """
-    Validate document metadata against the schema.
-    
+    Validate document metadata against a predefined JSON schema.
+
+    This function performs comprehensive validation of document metadata,
+    ensuring that all required fields are present and conform to expected formats.
+    It uses JSON Schema validation and performs additional custom validations.
+
     Args:
-        metadata: Dictionary containing document metadata
-        
+        metadata (Dict[str, Any]): A dictionary containing document metadata.
+
     Raises:
-        ValidationError: If metadata fails validation
+        ValidationError: If metadata fails to meet the required schema or validation rules.
+
+    Notes:
+        - Logs non-standard CELEX numbers
+        - Validates required fields: 'title' and 'celex_number'
+        - Allows flexible metadata with optional fields
     """
     try:
         # Validate identifier (optional)
@@ -74,13 +93,24 @@ def validate_metadata(metadata: Dict[str, Any]) -> None:
 
 def validate_document_id(doc_id: str) -> bool:
     """
-    Validate document ID format and check if it's a corrigendum.
-    
+    Validate the format and status of a document identifier.
+
+    Performs comprehensive checks on document identifiers to ensure they
+    meet the EUR-Lex document ID standards. Specifically:
+    - Checks for valid document ID format
+    - Identifies and filters out corrigendum documents
+    - Logs non-standard document identifiers
+
     Args:
-        doc_id: Document ID to validate
-        
+        doc_id (str): The document identifier to validate.
+
     Returns:
-        bool: True if document is valid and not a corrigendum
+        bool: True if the document is valid and not a corrigendum, False otherwise.
+
+    Notes:
+        - Uses regex patterns to validate document ID structure
+        - Handles various document ID formats
+        - Provides logging for tracking non-standard identifiers
     """
     if not doc_id:
         return False
@@ -99,13 +129,29 @@ def validate_document_id(doc_id: str) -> bool:
 
 def parse_date(date_str: str) -> Optional[datetime]:
     """
-    Parse a date string in various formats.
-    
+    Parse date strings with high flexibility and robustness.
+
+    Attempts to parse date strings from various input formats commonly 
+    found in EUR-Lex documents. Supports multiple date representations 
+    and handles potential parsing errors gracefully.
+
     Args:
-        date_str: Date string to parse
-        
+        date_str (str): A date string to be parsed.
+
     Returns:
-        datetime: Parsed datetime object or None if parsing fails
+        Optional[datetime]: A parsed datetime object if successful, 
+                            None if parsing fails.
+
+    Supported Formats:
+        - 'DD/MM/YYYY'
+        - 'YYYY-MM-DD'
+        - 'Month DD, YYYY'
+        - Partial or incomplete dates
+
+    Notes:
+        - Uses multiple parsing strategies
+        - Handles localized date formats
+        - Provides fallback mechanisms for complex date strings
     """
     formats = [
         '%d/%m/%Y',  # 10/01/2025
